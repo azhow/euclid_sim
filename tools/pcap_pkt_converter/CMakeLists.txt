@@ -14,6 +14,7 @@ find_package(PcapPlusPlus REQUIRED HINTS /usr/lib/pcapplusplus/cmake/pcapplusplu
 # Create executable
 add_executable("${PROJECT_NAME}" src/main.cpp)
 target_include_directories("${PROJECT_NAME}" PRIVATE include)
+target_include_directories("${PROJECT_NAME}" PRIVATE ../common/include)
 
 # We want to have the binary compiled in the same folder as the .cpp to be near the PCAP file
 set_target_properties("${PROJECT_NAME}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
