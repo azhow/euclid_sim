@@ -91,12 +91,12 @@ size_t save_ip_pairs_to_pkt_format(
 
 int main(int argc, char *argv[]) {
   cxxopts::Options options(
-      "Pcap slimmer", "This tool does the first step of the pre-processing "
-                      "steps for the EUCLID system experiments");
+      "Pcap2PKT Converter",
+      "This tool converts pcap files into simpler PKT files");
 
   options.add_options()("i,input", "Input pcap file",
                         cxxopts::value<std::string>())(
-      "o,output", "Output pkt file path",
+      "o,output", "Output PKT file path",
       cxxopts::value<std::string>())("h,help", "Print help");
 
   auto result = options.parse(argc, argv);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Read " << ipPairs.size() << " packets..." << std::endl;
 
-    std::cout << "Saving to new pkt file..." << std::endl;
+    std::cout << "Saving to new PKT file..." << std::endl;
 
     const auto fileSize{save_ip_pairs_to_pkt_format(
         result["output"].as<std::string>(), ipPairs)};
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Done!" << std::endl;
 
   } catch (std::runtime_error &e) {
-    std::cerr << "Error happened in converting between pcap and pkt: "
+    std::cerr << "Error happened in converting between pcap and PKT: "
               << e.what() << std::endl;
     return 2;
   } catch (std::exception &e) {
