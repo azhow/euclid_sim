@@ -61,16 +61,20 @@ size_t save_ip_pairs_to_pkt_format(
   }
 
   // Write metadata to file header
-  const char *fileVersion{"PKTV001"};
+  const char *fileVersion{"PKTV001X"};
   outputFile.write(fileVersion, sizeof(fileVersion));
 
   // Write the number of ip pair entries into the file
-  const auto pairCount{ipPairs.size()};
+  const uint64_t pairCount{ipPairs.size()};
   const auto sizeOfCount{sizeof(pairCount)};
   outputFile.write(reinterpret_cast<const char *>(&pairCount), sizeOfCount);
 
+  // Write reserved metadata section
+  const size_t sizeOfReservedMetadata{64 - sizeof(fileVersion) - sizeOfCount};
+  outputFile.write("0", sizeOfReservedMetadata);
+
   // Calculate file contents size
-  const auto fileSize{sizeof(fileVersion) + sizeOfCount + pairCount * 16};
+  const auto fileSize{sizeof(fileVersion) + sizeOfCount + sizeOfReservedMetadata + pairCount * 16};
 
   // Write each entry in to the file
   for (auto &p : ipPairs) {

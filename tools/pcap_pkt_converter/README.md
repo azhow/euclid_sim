@@ -50,8 +50,9 @@ The PKT file format is a format that simplifies the input data for the EUCLID ex
 
 The PKT file format is a simple binary format which consists of:
 1. A few metadata fields:
-    - 7 bytes - "PKTV001" -> Indicating the PKTV001 file format - Literal ASCII
-    - 4 bytes - uint64_t -> Number of entries in the file
+    - 8 bytes - "PKTV001X" -> Indicating the PKTV001X Extended file format - Literal ASCII
+    - 8 bytes - uint64_t -> Number of entries in the file
+    - 48 bytes - "0" -> Reserved metadata data area filled with 0s
 2. For each of the ```n``` entries in the file:
     - 4 bytes - uint32_t -> The non-network ordered source IP address
     - 4 bytes - uint32_t -> The non-network ordered destination IP address
