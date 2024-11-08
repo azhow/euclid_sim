@@ -2,7 +2,6 @@
 #include "PktWriter.hpp"
 #include "MappedPktFile.hpp"
 #include "cxxopts.hpp"
-#include <arpa/inet.h> // For IP address formatting
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
