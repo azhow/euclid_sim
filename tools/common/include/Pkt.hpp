@@ -35,8 +35,12 @@ struct Entry {
   uint32_t rsvdExp; // 4 bytes
   uint32_t rsvdAnnotation; // 4 bytes
 
-  bool is_malicious() const {
+  bool is_original_malicious() const {
     return rsvdAnnotation & 0x1; // First bit indicates malicious status
+  }
+
+  bool is_classified_malicious() const {
+    return rsvdExp & 0x1; // First bit indicates malicious status
   }
 };
 #pragma pack(pop)

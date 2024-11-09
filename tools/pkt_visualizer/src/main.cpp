@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
               << "\n\tDestination IP: " << format_ip(entry->dstIp)
               << "\n\tReserved Exp: " << entry->rsvdExp;
               << "\n\tReserved Annotation: " << entry->rsvdAnnotation;
-              << "\n\tMalicious: " << (entry->is_malicious() ? "Yes" : "No") << "\n";
+              << "\n\tMalicious: " << (entry->is_original_malicious() ? "Yes" : "No") << "\n";
       }
       else if ((count > (inputFile.getEntryCount() / 2)) && (count <= (inputFile.getEntryCount() / 2) + 20)) {
          std::cout << count + 1
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
               << "\n\tDestination IP: " << format_ip(entry->dstIp)
               << "\n\tReserved Exp: " << entry->rsvdExp;
               << "\n\tReserved Annotation: " << entry->rsvdAnnotation;
-              << "\n\tMalicious: " << (entry->is_malicious() ? "Yes" : "No") << "\n";
+              << "\n\tMalicious: " << (entry->is_original_malicious() ? "Yes" : "No") << "\n";
       }
 
       count++;
