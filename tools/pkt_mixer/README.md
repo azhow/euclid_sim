@@ -27,7 +27,7 @@ make
 
 ## How to use the tool
 
-For the execution of the tool, there are only two parameters required:
+For the execution of the tool, there are only five parameters required:
 1. The legitimate pkt file.
 2. The malicious pkt file.
 3. The value ```n``` for the number of packets in the detection portion of the experiment.
