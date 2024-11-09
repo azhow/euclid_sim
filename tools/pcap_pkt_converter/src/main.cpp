@@ -1,4 +1,6 @@
 #include "cxxopts.hpp"
+#include "Pkt.hpp"
+#include "PktWriter.hpp"
 #include <IPv4Layer.h>
 #include <Packet.h>
 #include <PcapFileDevice.h>
@@ -50,47 +52,16 @@ read_ip_pairs_from_pcap(const std::string &pcapFilePath) {
   return ipPairs;
 }
 
-size_t save_ip_pairs_to_pkt_format(
-    const std::string &pktFilePath,
-    const std::vector<std::array<uint32_t, 4>> &ipPairs) {
-  // Put the pairs into a new file
-  std::ofstream outputFile{pktFilePath, std::ios::out | std::ios::binary};
+size_t save_ip_pairs_to_pkt_format(const std::string &pktFilePath, const std::vector<std::array<uint32_t, 4>> &ipPairs) {
+  Pkt::Writer writer{ pktFilePath };
 
-  if (!outputFile.is_open()) {
-    std::runtime_error("Failed to open output file.");
-  }
-
-  // Write metadata to file header
-  const char *fileVersion{"PKTV001X"};
-  outputFile.write(fileVersion, sizeof(fileVersion));
-
-  // Write the number of ip pair entries into the file
-  const uint64_t pairCount{ipPairs.size()};
-  const auto sizeOfCount{sizeof(pairCount)};
-  outputFile.write(reinterpret_cast<const char *>(&pairCount), sizeOfCount);
-
-  // Write reserved metadata section
-  const size_t sizeOfReservedMetadata{64 - sizeof(fileVersion) - sizeOfCount};
-  outputFile.write("0", sizeOfReservedMetadata);
-
-  // Calculate file contents size
-  const auto fileSize{sizeof(fileVersion) + sizeOfCount + sizeOfReservedMetadata + pairCount * 16};
-
-  // Write each entry in to the file
+  std::vector<Pkt::Entry> entries{};
+  entries.reserve(ipPairs.size());
   for (auto &p : ipPairs) {
-    const auto ipSrc{p[0]};
-    const auto ipDst{p[1]};
-    const auto rsvd1{p[2]};
-    const auto rsvd2{p[3]};
-    outputFile.write(reinterpret_cast<const char *>(&ipSrc), sizeof(ipSrc));
-    outputFile.write(reinterpret_cast<const char *>(&ipDst), sizeof(ipDst));
-    outputFile.write(reinterpret_cast<const char *>(&rsvd1), sizeof(rsvd1));
-    outputFile.write(reinterpret_cast<const char *>(&rsvd2), sizeof(rsvd2));
+    entries.emplace_back(Pkt::Entry{p[0], p[1], 0, 0});
   }
 
-  outputFile.close();
-
-  return fileSize;
+  return writer.write(entries);
 }
 
 int main(int argc, char *argv[]) {

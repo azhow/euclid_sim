@@ -17,6 +17,9 @@ public:
   // Write entries to file
   uint64_t write(const std::vector<const Pkt::Entry *> &packets);
 
+  // Write entries to file
+  uint64_t write(const std::vector<Pkt::Entry> &packets);
+
 private:
   std::ofstream outputFile;
 

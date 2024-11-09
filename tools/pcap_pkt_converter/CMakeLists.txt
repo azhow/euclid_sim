@@ -8,11 +8,18 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Add the common utilities directory
+add_subdirectory(../common common_build)
+
 # Setup pcapplusplus
 find_package(PcapPlusPlus REQUIRED HINTS /usr/lib/pcapplusplus/cmake/pcapplusplus)
 
 # Create executable
 add_executable("${PROJECT_NAME}" src/main.cpp)
+
+# Link the common utilities library with the main application
+target_link_libraries("${PROJECT_NAME}" PRIVATE common_utilities)
+
 target_include_directories("${PROJECT_NAME}" PRIVATE include)
 target_include_directories("${PROJECT_NAME}" PRIVATE ../common/include)
 

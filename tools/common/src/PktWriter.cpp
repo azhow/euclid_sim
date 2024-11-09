@@ -23,6 +23,20 @@ uint64_t Writer::write(const std::vector<const Pkt::Entry *> &packets) {
 
   // Write contents
   for (auto &p : packets) {
+    outputFile.write(reinterpret_cast<const char *>(p), sizeof(Pkt::Entry));
+  }
+
+  return sizeof(Pkt::Header) + packets.size() * sizeof(Pkt::Entry);
+}
+
+// Write entries to file
+uint64_t Writer::write(const std::vector<Pkt::Entry> &packets) {
+  // Write header
+  const auto header{ generate_header(packets.size()) };
+  outputFile.write(reinterpret_cast<const char *>(&header), sizeof(Pkt::Header));
+
+  // Write contents
+  for (const auto &p : packets) {
     outputFile.write(reinterpret_cast<const char *>(&p), sizeof(Pkt::Entry));
   }
 
