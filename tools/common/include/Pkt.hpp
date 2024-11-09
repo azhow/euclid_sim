@@ -32,11 +32,11 @@ struct Header {
 struct Entry {
   uint32_t srcIp;     // 4 bytes
   uint32_t dstIp;     // 4 bytes
-  uint32_t reserved1; // 4 bytes
-  uint32_t reserved2; // 4 bytes
+  uint32_t rsvdExp; // 4 bytes
+  uint32_t rsvdAnnotation; // 4 bytes
 
   bool is_malicious() const {
-    return reserved2 & 0x1; // First bit indicates malicious status
+    return rsvdAnnotation & 0x1; // First bit indicates malicious status
   }
 };
 #pragma pack(pop)

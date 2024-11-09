@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
       const Pkt::Entry* entry = nullptr;
       if(distribution(engine)) {
         entry = maliciousFile.readNextEntry();
-        const_cast<Pkt::Entry*>(entry)->reserved2 = 1;
+        const_cast<Pkt::Entry*>(entry)->rsvdAnnotation = 1;
       } else {
         entry = legitFile.readNextEntry();
       }

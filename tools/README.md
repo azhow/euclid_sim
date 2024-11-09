@@ -10,15 +10,19 @@ The PKT file format is a simple binary format which consists of:
 2. For each of the ```n``` entries in the file:
     - 4 bytes - uint32_t -> The non-network ordered source IP address
     - 4 bytes - uint32_t -> The non-network ordered destination IP address
-    - 4 bytes - uint32_t -> Reserved field 1 - **More info below**
-    - 4 bytes - uint32_t -> Reserved field 2 - **More info below**
+    - 4 bytes - uint32_t -> Reserved field for experiments - **More info below**
+    - 4 bytes - uint32_t -> Reserved field for offline annotation - **More info below**
 
 ### Reserved fields
 
-#### Reserved field 1
+#### Reserved field for experiments
 
-Empty for now.
+During experiment execution, this is the field used by the classifier to indicate information about this entry.
 
-#### Reserved field 2
+The first bit indicates if this was classified as a malicious entry.
+
+#### Reserved field for offline annotation
+
+This field is used for annotating data with its true information added at the time of dataset creation.
 
 The first bit indicates if the source IP address is a known malicious source.
