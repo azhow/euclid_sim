@@ -39,6 +39,7 @@ private:
   MappedPktFile input;
   const std::filesystem::path output;
   const std::unique_ptr<IClassifier> classifier;
+  Diagnoser diagnoser;
 
   std::unique_ptr<IClassifier>
   create_classifier(const nlohmann::json &classifierConfig) {
@@ -59,7 +60,8 @@ private:
   void run_training(IClassifier *classifier) {
     // TODO -- Is the training entries part of the dataset or the classifier?
     // Eitherway, it should not be read until the end
-    for (size_t count = 0; count < input.getEntryCount() / 2; ++count) {
+    const auto training_size{ classifier->get_training_size(input.getEntryCount()) };
+    for (size_t count = 0; count < training_size; ++count) {
       const Pkt::Entry *entry = input.readNextEntry();
       classifier->train(const_cast<Pkt::Entry *>(entry));
     }
@@ -67,9 +69,9 @@ private:
 
   void run_classification(IClassifier *classifier) {
     // Reads from the end of the training until the end
-    for (const Pkt::Entry *entry = input.readNextEntry(); entry != nullptr;
-         entry = input.readNextEntry()) {
+    for (const Pkt::Entry *entry = input.readNextEntry(); entry != nullptr; entry = input.readNextEntry()) {
       classifier->classify(const_cast<Pkt::Entry *>(entry));
+      diagnoser.collect_stats(entry);
     }
   }
 };

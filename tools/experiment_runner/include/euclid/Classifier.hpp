@@ -25,6 +25,10 @@ public:
     // TODO
   }
 
+  virtual uint64_t get_training_size(uint64_t dataset_size) const override {
+    return dataset_size / 2;
+  }
+
   virtual void print() const override {
     std::cout << "\tClassifier: EUCLID" << std::endl;
     std::cout << "\tParams:" << std::endl;
