@@ -25,12 +25,13 @@ public:
   void run_experiment() {
     run_training(classifier.get());
     run_classification(classifier.get());
+    diagnoser.print();
   }
 
   void print() const {
-    std::cout << "Experiment: " << name << std::endl;
-    std::cout << "Input Size: " << input.getEntryCount() << std::endl;
-    std::cout << "Output: " << output << std::endl;
+    std::cout << "Experiment: " << name << "\n";
+    std::cout << "\tInput Size: " << input.getEntryCount() << "\n";
+    std::cout << "\tOutput: " << output << std::endl;
     classifier->print();
   }
 
@@ -39,6 +40,7 @@ private:
   MappedPktFile input;
   const std::filesystem::path output;
   const std::unique_ptr<IClassifier> classifier;
+  // Diagnoser is only used during classification
   Diagnoser diagnoser;
 
   std::unique_ptr<IClassifier>
@@ -58,8 +60,6 @@ private:
   }
 
   void run_training(IClassifier *classifier) {
-    // TODO -- Is the training entries part of the dataset or the classifier?
-    // Eitherway, it should not be read until the end
     const auto training_size{ classifier->get_training_size(input.getEntryCount()) };
     for (size_t count = 0; count < training_size; ++count) {
       const Pkt::Entry *entry = input.readNextEntry();
