@@ -1,15 +1,14 @@
 // MappedPktFile.cpp
 
 #include "MappedPktFile.hpp"
-#include <algorithm>
 #include <cstring>
 
 MappedPktFile::MappedPktFile(const std::string &filePath)
     : MappedFile(filePath), entryCount(0), entryStartPosition(0) {
-  validateAndInitialize();
+  validate_and_initialize();
 }
 
-void MappedPktFile::validateAndInitialize() {
+void MappedPktFile::validate_and_initialize() {
   // Expected header size: 8 bytes for "PKTV001X" + 8 bytes for the entry count
   // + 48 bytes reserved
   const size_t headerSize = 8 + sizeof(uint64_t) + 48;
@@ -32,12 +31,14 @@ void MappedPktFile::validateAndInitialize() {
   entryStartPosition = sizeof(Pkt::Header);
 
   // Move the current position to the start of entries
-  resetEntries();
+  reset();
 }
 
-uint64_t MappedPktFile::getEntryCount() const { return entryCount; }
+uint64_t MappedPktFile::get_entry_count() const {
+  return entryCount;
+}
 
-const Pkt::Entry *MappedPktFile::readNextEntry() {
+const Pkt::Entry *MappedPktFile::read_next_entry() {
   // Calculate the size of an entry
   constexpr size_t entrySize = sizeof(Pkt::Entry);
 
@@ -56,7 +57,7 @@ const Pkt::Entry *MappedPktFile::readNextEntry() {
   return entry;
 }
 
-void MappedPktFile::resetEntries() {
+void MappedPktFile::reset() {
   // Set currentPosition to the beginning of the entries
   currentPosition = entryStartPosition;
 }

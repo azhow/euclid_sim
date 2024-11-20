@@ -62,13 +62,13 @@ int main(int argc, char *argv[]) {
     // Check that the number that there are enough entries for the new dataset
     const auto detectionPhaseSize{result["n"].as<uint64_t>()};
     const auto totalNumMaliciousEntries{ detectionPhaseSize/2 * percentage };
-    if ((detectionPhaseSize + detectionPhaseSize / 2) - totalNumMaliciousEntries > legitFile.getEntryCount()) {
+    if ((detectionPhaseSize + detectionPhaseSize / 2) - totalNumMaliciousEntries > legitFile.get_entry_count()) {
       std::cerr << "Error: Not enough entries in the legitimate dataset for the chosen value of n."
                 << std::endl;
       return 3;
     }
 
-    if (totalNumMaliciousEntries > maliciousFile.getEntryCount()) {
+    if (totalNumMaliciousEntries > maliciousFile.get_entry_count()) {
       std::cerr << "Error: Not enough entries in the malicious dataset for the chosen value of n."
                 << std::endl;
       return 3;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
     // Insert the data for the training and pre-attack phases
     for (size_t i = 0; i <= (detectionPhaseSize / 2) + (detectionPhaseSize / 4); ++i) {
-      const auto entry = legitFile.readNextEntry();
+      const auto entry = legitFile.read_next_entry();
       mixedData.emplace_back(entry);
     }
 
@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i <= (detectionPhaseSize / 2); ++i) {
       const Pkt::Entry* entry = nullptr;
       if(distribution(engine)) {
-        entry = maliciousFile.readNextEntry();
+        entry = maliciousFile.read_next_entry();
         const_cast<Pkt::Entry*>(entry)->rsvdAnnotation = 1;
       } else {
-        entry = legitFile.readNextEntry();
+        entry = legitFile.read_next_entry();
       }
 
       mixedData.emplace_back(entry);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     // Insert the data for the post-attack phase
     for (size_t i = 0; i <= (detectionPhaseSize / 4); ++i) {
-      const auto entry = legitFile.readNextEntry();
+      const auto entry = legitFile.read_next_entry();
       mixedData.emplace_back(entry);
     }
 

@@ -36,12 +36,12 @@ int main(int argc, char *argv[]) {
     // Open input files
     MappedPktFile inputFile(result["f"].as<std::string>());
 
-    std::cout << "Entry count: " << inputFile.getEntryCount() << std::endl;
+    std::cout << "Entry count: " << inputFile.get_entry_count() << std::endl;
 
     // Insert the data for the training and pre-attack phases
     size_t count{ 0 };
-    for (const Pkt::Entry *entry = inputFile.readNextEntry(); entry != nullptr; entry = inputFile.readNextEntry()) {
-      if ((count <= 5) || (inputFile.getEntryCount() - count <= 5)) {
+    for (const Pkt::Entry *entry = inputFile.read_next_entry(); entry != nullptr; entry = inputFile.read_next_entry()) {
+      if ((count <= 5) || (inputFile.get_entry_count() - count <= 5)) {
          std::cout << count + 1
               << ":\n\tSource IP: " << format_ip(entry->srcIp)
               << "\n\tDestination IP: " << format_ip(entry->dstIp)
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
               << "\n\tReserved Annotation: " << entry->rsvdAnnotation;
               << "\n\tMalicious: " << (entry->is_original_malicious() ? "Yes" : "No") << "\n";
       }
-      else if ((count > (inputFile.getEntryCount() / 2)) && (count <= (inputFile.getEntryCount() / 2) + 20)) {
+      else if ((count > (inputFile.get_entry_count() / 2)) && (count <= (inputFile.get_entry_count() / 2) + 20)) {
          std::cout << count + 1
               << ":\n\tSource IP: " << format_ip(entry->srcIp)
               << "\n\tDestination IP: " << format_ip(entry->dstIp)
