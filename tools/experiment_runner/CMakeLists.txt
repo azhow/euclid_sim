@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 20)
 # popen()/pclose() are not C++ standards
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+# set(CMAKE_BUILD_TYPE Release)
 
 # Add the common utilities directory
 add_subdirectory(../common common_build)

@@ -30,7 +30,7 @@ public:
 
   void print() const {
     std::cout << "Experiment: " << name << "\n";
-    std::cout << "\tInput Size: " << input.getEntryCount() << "\n";
+    std::cout << "\tInput Size: " << input.get_entry_count() << "\n";
     std::cout << "\tOutput: " << output << std::endl;
     classifier->print();
   }
@@ -60,19 +60,11 @@ private:
   }
 
   void run_training(IClassifier *classifier) {
-    const auto training_size{ classifier->get_training_size(input.getEntryCount()) };
-    for (size_t count = 0; count < training_size; ++count) {
-      const Pkt::Entry *entry = input.readNextEntry();
-      classifier->train(const_cast<Pkt::Entry *>(entry));
-    }
+    classifier->train(input);
   }
 
   void run_classification(IClassifier *classifier) {
-    // Reads from the end of the training until the end
-    for (const Pkt::Entry *entry = input.readNextEntry(); entry != nullptr; entry = input.readNextEntry()) {
-      classifier->classify(const_cast<Pkt::Entry *>(entry));
-      diagnoser.collect_stats(entry);
-    }
+    classifier->classify(input, diagnoser);
   }
 };
 
