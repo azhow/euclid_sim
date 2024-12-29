@@ -25,7 +25,7 @@ public:
   };
 
   ExtendedCountSketch(uint64_t depth, uint64_t width)
-      : depth_(depth), width_(width), table_(depth, width) {
+      : depth_(depth), width_(width), table_(depth, width), estimates_(depth, 0) {
   }
 
   uint64_t get_depth() const { return depth_; }
@@ -36,21 +36,18 @@ public:
 
   int64_t estimate(uint32_t address,
                    const std::vector<THashFunction>& hash_functions,
-                   const std::vector<THashFunction>& sign_functions) const {
-    std::vector<int64_t> estimates{};
-    estimates.reserve(depth_);
-
+                   const std::vector<THashFunction>& sign_functions) {
     for (size_t i = 0; i < depth_; ++i) {
       const int64_t col = hash_functions[i](address); // Find the column index for this row
       const int64_t sign = 2 * sign_functions[i](address) - 1; // Determine the sign (+1 or -1)
-      estimates.push_back(table_(i, col).count * sign); // Get signed count
+      estimates_[i] = table_(i, col).count * sign; // Get signed count
     }
 
     // Use std::nth_element to find the median
     size_t mid = depth_ / 2; // Index of the median
-    std::nth_element(estimates.begin(), estimates.begin() + mid, estimates.end());
+    std::nth_element(estimates_.begin(), estimates_.begin() + mid, estimates_.end());
 
-    return estimates[mid]; // Return the median
+    return estimates_[mid]; // Return the median
   }
 
 private:
@@ -60,14 +57,7 @@ private:
         : rows_(rows), cols_(cols), data_(std::vector<CountSketchEntry>(rows * cols, CountSketchEntry())) {}
 
     inline CountSketchEntry &operator()(size_t row, size_t col) { return data_[row * cols_ + col]; }
-
-    inline const CountSketchEntry &operator()(size_t row, size_t col) const {
-      return data_[row * cols_ + col];
-    }
-
-    void reset() {
-      std::fill(data_.begin(), data_.end(), CountSketchEntry());
-    }
+    inline const CountSketchEntry &operator()(size_t row, size_t col) const { return data_[row * cols_ + col]; }
 
   private:
     std::vector<CountSketchEntry> data_;
@@ -78,12 +68,13 @@ private:
   const uint64_t width_;
   double entropy_;
   Matrix table_;
+  std::vector<int64_t> estimates_;
 };
 
 class CountSketchManager {
 public:
-  enum class CountSketchSelection {
-    SAFE,
+  enum CountSketchSelection {
+    SAFE = 0,
     RUNNING,
     LAST
   };
@@ -104,11 +95,11 @@ public:
 
     // Initialize count sketches
     for (auto el : {CountSketchSelection::SAFE, CountSketchSelection::RUNNING, CountSketchSelection::LAST}) {
-      count_sketches_.emplace(el, ExtendedCountSketch(depth, width));
+      count_sketches_.push_back(ExtendedCountSketch(depth, width));
     }
   }
 
-  double get_variation(int32_t address) const {
+  double get_variation(int32_t address) {
     // Equation 8a/b
     return estimate(address, CountSketchSelection::LAST) - estimate(address, CountSketchSelection::SAFE);
   }
@@ -118,15 +109,17 @@ public:
       const auto col{ hash_functions_[i](address) };
       const auto sign{ sign_functions_[i](address) };
 
-      auto running_cs { count_sketches_.at(CountSketchSelection::RUNNING) };
+      auto& running_cs { count_sketches_[CountSketchSelection::RUNNING] };
       if (running_cs(i, col).wid != curr_wid) {
-        auto last_cs { count_sketches_.at(CountSketchSelection::LAST) };
+        auto& last_cs { count_sketches_[CountSketchSelection::LAST] };
         if (curr_wid > 0 && curr_system_status == Status::SAFE) {
           // Copy from the last running window
-          auto safe_cs { count_sketches_.at(CountSketchSelection::SAFE )};
-          safe_cs(i, col) = last_cs(i, col);
+          auto& safe_cs { count_sketches_[CountSketchSelection::SAFE] };
+          safe_cs(i, col).count = last_cs(i, col).count;
+          safe_cs(i, col).wid = last_cs(i, col).wid;
         }
-        last_cs(i, col) = running_cs(i, col);
+        last_cs(i, col).count = running_cs(i, col).count;
+        last_cs(i, col).wid = running_cs(i, col).wid;
         running_cs(i, col).count = 0;
         running_cs(i, col).wid = curr_wid;
       }
@@ -140,8 +133,8 @@ public:
     entropy_norm_ += estimated_freq * log2(estimated_freq) - (estimated_freq - 1) * log2(estimated_freq - 1);
   }
 
-  int64_t estimate(uint32_t address, CountSketchSelection which) const {
-    auto count_sketch { count_sketches_.at(which) };
+  int64_t estimate(uint32_t address, CountSketchSelection which) {
+    auto& count_sketch { count_sketches_[which] };
     return count_sketch.estimate(address, hash_functions_, sign_functions_);
   }
 
@@ -150,7 +143,7 @@ public:
 private:
   std::vector<THashFunction> hash_functions_;
   std::vector<THashFunction> sign_functions_;
-  std::unordered_map<CountSketchSelection, ExtendedCountSketch> count_sketches_;
+  std::vector<ExtendedCountSketch> count_sketches_;
   double entropy_norm_;
 
   // Helper function to create hash functions with different seeds

@@ -61,11 +61,7 @@ public:
         curr_wid++;
         std::cout << "Current WID: " << curr_wid << "\n";
         diagnoser.print();
-        std::cout << "==================" << "\n";
-      }
-
-      if (curr_wid == 2) {
-        break;
+        std::cout << "==========================================" << "\n";
       }
 
       // A. Impl
