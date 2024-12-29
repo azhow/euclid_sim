@@ -1,0 +1,6 @@
+#ifndef EUCLID_STATUS_HPP
+#define EUCLID_STATUS_HPP
+
+enum class Status { SAFE, DEFENSE_ACTIVE, DEFENSE_COOLDOWN };
+
+#endif

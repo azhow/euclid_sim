@@ -35,7 +35,7 @@ public:
     std::cout << "\tTotal classified malicious entries: "
               << total_classified_malicious_ << "\n";
     std::cout << "\tTrue positives: " << true_positives_count_ << "\n";
-    std::cout << "\tFalse positives: " << false_positives_count_ << std::endl;
+    std::cout << "\tFalse positives: " << false_positives_count_ << "\n";
   }
 
 private:

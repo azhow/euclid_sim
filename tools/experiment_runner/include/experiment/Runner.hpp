@@ -23,8 +23,7 @@ public:
         classifier{create_classifier(experimentConfig["classifier"])} {}
 
   void run_experiment() {
-    run_training(classifier.get());
-    run_classification(classifier.get());
+    run(classifier.get());
     diagnoser.print();
   }
 
@@ -59,12 +58,8 @@ private:
     return classifier;
   }
 
-  void run_training(IClassifier *classifier) {
-    classifier->train(input);
-  }
-
-  void run_classification(IClassifier *classifier) {
-    classifier->classify(input, diagnoser);
+  void run(IClassifier *classifier) {
+    classifier->run(input, diagnoser);
   }
 };
 

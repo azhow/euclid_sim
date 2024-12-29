@@ -5,6 +5,7 @@
                         "classifier": {
                                 "name": "EUCLID",
                                 "parameters": {
+                                        "threshold": 0,
                                         "sensitivity": 0.79,
                                         "count_sketch_width": 10,
                                         "count_sketch_depth": 20,
@@ -19,6 +20,7 @@
                         "classifier": {
                                 "name": "EUCLID",
                                 "parameters": {
+                                        "threshold": 0,
                                         "sensitivity": 1,
                                         "count_sketch_width": 45,
                                         "count_sketch_depth": 300,

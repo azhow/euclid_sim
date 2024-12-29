@@ -10,9 +10,7 @@ namespace Experiment {
 class IClassifier {
 public:
   IClassifier(nlohmann::json classifier_params) {};
-  virtual void train(IPktFile& input) = 0;
-  virtual void classify(IPktFile& input, Diagnoser& diagnoser) = 0;
-  virtual uint64_t get_training_size(uint64_t dataset_size) const = 0;
+  virtual void run(IPktFile& input, Diagnoser& diagnoser) = 0;
   virtual void print() const = 0;
 };
 } // namespace Experiment
