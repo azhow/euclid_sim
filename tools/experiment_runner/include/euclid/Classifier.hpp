@@ -21,13 +21,14 @@ class Classifier : public Experiment::IClassifier {
 public:
   Classifier(nlohmann::json classifier_params)
       : IClassifier(classifier_params),
+        smoothing_(classifier_params["smoothing"]),
         sensitivity_(classifier_params["sensitivity"]),
         observation_window_size_(classifier_params["observation_window"]),
         defense_threshold_(classifier_params["defense_threshold"]),
         system_status_(Status::SAFE),
         src_cs_(classifier_params["count_sketch_depth"], classifier_params["count_sketch_width"], classifier_params.value("seed", std::random_device{}())),
         dst_cs_(classifier_params["count_sketch_depth"], classifier_params["count_sketch_width"], classifier_params.value("seed", std::random_device{}())),
-        ewma_src_(0), ewma_dst_(0), ewmmd_src_(0), ewmmd_dst_(0), threshold_src_(0), threshold_dst_(0) {}
+        ewma_src_(0), ewma_dst_(0), ewmmd_src_(0), ewmmd_dst_(0) {}
 
   virtual void run(IPktFile &input, Experiment::Diagnoser &diagnoser) override {
     size_t count{1};
@@ -69,6 +70,7 @@ public:
 
       if (count % observation_window_size_ == 0) {
         curr_wid++;
+
         std::cout << "WID: " << curr_wid << "/" << total_wids << "\n";
         diagnoser.print();
         std::cout << "========================================================================" << "\n";
@@ -80,7 +82,7 @@ public:
         const auto dst_entropy{ ow_log - (dst_cs_.get_entropy_norm() / observation_window_size_) };
 
         // A.3 & 4 - Update EWMA and EWMMD
-        if (curr_wid == 0) {
+        if (curr_wid == 1) {
           ewma_src_ = src_entropy;
           ewma_dst_ = dst_entropy;
           ewmmd_src_ = 1;
@@ -88,8 +90,24 @@ public:
         }
         else {
           // Equation 6a/b
-          under_attack = (src_entropy > threshold_src_) || (dst_entropy < threshold_dst_);
+          const auto src_threshold = ewma_src_ + sensitivity_ * ewmmd_src_;
+          const auto dst_threshold = ewma_dst_ - sensitivity_ * ewmmd_dst_;
+          under_attack = (src_entropy > src_threshold) || (dst_entropy < dst_threshold);
 
+            std::cout << "under_attack: " << under_attack  << "\n";
+            std::cout << "src_entropy: " << src_entropy << "\n";
+            std::cout << "threshold_src: " << src_threshold << "\n";
+            std::cout << "ewma_src: " << ewma_src_ << "\n";
+            std::cout << "ewmmd_src: " << ewmmd_src_ << "\n";
+            std::cout << "dst_entropy: " << dst_entropy << "\n";
+            std::cout << "threshold_dst: " << dst_threshold << "\n";
+            std::cout << "ewma_dst: " << ewma_dst_ << "\n";
+            std::cout << "ewmmd_dst: " << ewmmd_dst_ << "\n";
+//
+//          if (under_attack) {
+//            throw;
+//          }
+//
           if (!under_attack) {
             update_ewms(src_entropy, dst_entropy, curr_wid);
           }
@@ -138,7 +156,7 @@ private:
   const double sensitivity_;
   const uint64_t observation_window_size_;
   const double defense_threshold_;
-  const double smoothing_{20 * 2e-8};
+  const double smoothing_;
 
   // Count Sketches
   CountSketchManager src_cs_;
@@ -150,8 +168,6 @@ private:
   double ewma_dst_;
   double ewmmd_src_;
   double ewmmd_dst_;
-  double threshold_src_;
-  double threshold_dst_;
 
   void update_ewms(double src_entropy, double dst_entropy, size_t wid) {
     // Equation 4a/b
@@ -161,10 +177,6 @@ private:
     // Equation 5a/b
     ewmmd_src_ = smoothing_ * std::fabs(src_entropy - ewma_src_) + (1 - smoothing_) * ewmmd_src_;
     ewmmd_dst_ = smoothing_ * std::fabs(dst_entropy - ewma_dst_) + (1 - smoothing_) * ewmmd_dst_;
-
-    // Equation 6a/b
-    threshold_src_ = ewma_src_ + sensitivity_ * ewmmd_src_;
-    threshold_dst_ = ewma_dst_ - sensitivity_ * ewmmd_dst_;
   }
 
   void transition_state(bool attack_last_window) {
