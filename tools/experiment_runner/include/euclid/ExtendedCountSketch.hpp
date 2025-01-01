@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <random>
 #include <vector>
 
@@ -79,14 +80,14 @@ public:
     LAST
   };
 
-  CountSketchManager(uint64_t depth, uint64_t width) :
+  CountSketchManager(uint64_t depth, uint64_t width, uint32_t seed) :
     hash_functions_(), sign_functions_(), count_sketches_(), entropy_norm_(0) {
 
     hash_functions_.reserve(depth);
     sign_functions_.reserve(depth);
 
     // Initialize hash functions
-    std::mt19937 rng{std::random_device{}()};
+    std::mt19937 rng{seed};
 
     for (auto i = 0; i < depth; ++i) {
       hash_functions_.push_back(create_hash_function(rng(), width));
@@ -127,10 +128,12 @@ public:
       running_cs(i, col).count += sign;
     }
 
-    auto estimated_freq{ estimate(address, CountSketchSelection::RUNNING) };
+    const auto estimated_freq{ estimate(address, CountSketchSelection::RUNNING) };
 
     // Equation 10
-    entropy_norm_ += estimated_freq * log2(estimated_freq) - (estimated_freq - 1) * log2(estimated_freq - 1);
+    if (estimated_freq > 1) {
+      entropy_norm_ += estimated_freq * log2(estimated_freq) - (estimated_freq - 1) * log2(estimated_freq - 1);
+    }
   }
 
   int64_t estimate(uint32_t address, CountSketchSelection which) {
@@ -139,6 +142,8 @@ public:
   }
 
   double get_entropy_norm() const { return entropy_norm_; }
+
+  void reset_entropy_norm() { entropy_norm_ = 0; }
 
 private:
   std::vector<THashFunction> hash_functions_;

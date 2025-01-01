@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <random>
 
 #include "experiment/IClassifier.hpp"
 #include "ExtendedCountSketch.hpp"
@@ -22,15 +23,16 @@ public:
       : IClassifier(classifier_params),
         sensitivity_(classifier_params["sensitivity"]),
         observation_window_size_(classifier_params["observation_window"]),
-        threshold_(classifier_params["threshold"]),
+        defense_threshold_(classifier_params["defense_threshold"]),
         system_status_(Status::SAFE),
-        src_cs_(classifier_params["count_sketch_depth"], classifier_params["count_sketch_width"]),
-        dst_cs_(classifier_params["count_sketch_depth"], classifier_params["count_sketch_width"]),
+        src_cs_(classifier_params["count_sketch_depth"], classifier_params["count_sketch_width"], classifier_params.value("seed", std::random_device{}())),
+        dst_cs_(classifier_params["count_sketch_depth"], classifier_params["count_sketch_width"], classifier_params.value("seed", std::random_device{}())),
         ewma_src_(0), ewma_dst_(0), ewmmd_src_(0), ewmmd_dst_(0), threshold_src_(0), threshold_dst_(0) {}
 
   virtual void run(IPktFile &input, Experiment::Diagnoser &diagnoser) override {
     size_t count{1};
     size_t curr_wid{0};
+    const auto total_wids { input.get_entry_count() / observation_window_size_ + 1 };
 
     bool anomaly_in_last_window{ false };
     for (const Pkt::Entry *entry = input.read_next_entry(); entry != nullptr; entry = input.read_next_entry()) {
@@ -57,41 +59,44 @@ public:
       // Compare freq. variation against operator set threshold
       // B.4 Enforcement
       // Drop/Ignore/Whatever - this is irrelevant for this work
-      if (count % observation_window_size_ == 0) {
-        curr_wid++;
-        std::cout << "Current WID: " << curr_wid << "\n";
-        diagnoser.print();
-        std::cout << "==========================================" << "\n";
-      }
-
+      //
       // A. Impl
       // A.1 - Update count sketches
       src_cs_.update(entry->srcIp, curr_wid, system_status_);
       dst_cs_.update(entry->dstIp, curr_wid, system_status_);
 
-      // A.2 - Retrieve updated entropy
-      const auto ow_log{ log2(observation_window_size_) };
-      // Equation 11
-      const auto src_entropy{ ow_log - (static_cast<int64_t>(src_cs_.get_entropy_norm()) >> static_cast<int64_t>(ow_log)) };
-      const auto dst_entropy{ ow_log - (static_cast<int64_t>(dst_cs_.get_entropy_norm()) >> static_cast<int64_t>(ow_log)) };
-
-      // A.3 & 4 - Update EWMA and EWMMD
       auto under_attack = false;
 
-      if (curr_wid == 0) {
-        ewma_src_ = src_entropy;
-        ewma_dst_ = dst_entropy;
-        ewmmd_src_ = 1;
-        ewmmd_dst_ = 1;
-      }
-      else {
-        // Equation 6a/b
-        under_attack = (src_entropy > (ewma_src_ + sensitivity_ * ewmmd_src_)) ||
-                       (dst_entropy > (ewma_dst_ + sensitivity_ * ewmmd_dst_));
+      if (count % observation_window_size_ == 0) {
+        curr_wid++;
+        std::cout << "WID: " << curr_wid << "/" << total_wids << "\n";
+        diagnoser.print();
+        std::cout << "========================================================================" << "\n";
 
-        if (!under_attack) {
-          update_ewms(src_entropy, dst_entropy);
+        // A.2 - Retrieve updated entropy
+        // Equation 11
+        const auto ow_log{ log2(observation_window_size_) };
+        const auto src_entropy{ ow_log - (src_cs_.get_entropy_norm() / observation_window_size_) };
+        const auto dst_entropy{ ow_log - (dst_cs_.get_entropy_norm() / observation_window_size_) };
+
+        // A.3 & 4 - Update EWMA and EWMMD
+        if (curr_wid == 0) {
+          ewma_src_ = src_entropy;
+          ewma_dst_ = dst_entropy;
+          ewmmd_src_ = 1;
+          ewmmd_dst_ = 1;
         }
+        else {
+          // Equation 6a/b
+          under_attack = (src_entropy > threshold_src_) || (dst_entropy < threshold_dst_);
+
+          if (!under_attack) {
+            update_ewms(src_entropy, dst_entropy, curr_wid);
+          }
+        }
+
+        src_cs_.reset_entropy_norm();
+        dst_cs_.reset_entropy_norm();
       }
 
       // B. Impl
@@ -106,7 +111,7 @@ public:
 
         // B.3 - Mark the packet as malicious
         // Equation 9b
-        if (frequency_variation > threshold_) {
+        if (frequency_variation > defense_threshold_) {
           mark_packet_malicious(entry);
         }
       }
@@ -132,7 +137,7 @@ private:
   // Parameters
   const double sensitivity_;
   const uint64_t observation_window_size_;
-  const double threshold_;
+  const double defense_threshold_;
   const double smoothing_{20 * 2e-8};
 
   // Count Sketches
@@ -148,13 +153,16 @@ private:
   double threshold_src_;
   double threshold_dst_;
 
-  void update_ewms(double src_entropy, double dst_entropy) {
+  void update_ewms(double src_entropy, double dst_entropy, size_t wid) {
+    // Equation 4a/b
     ewma_src_ = smoothing_ * src_entropy + (1 - smoothing_) * ewma_src_;
     ewma_dst_ = smoothing_ * dst_entropy + (1 - smoothing_) * ewma_dst_;
 
+    // Equation 5a/b
     ewmmd_src_ = smoothing_ * std::fabs(src_entropy - ewma_src_) + (1 - smoothing_) * ewmmd_src_;
     ewmmd_dst_ = smoothing_ * std::fabs(dst_entropy - ewma_dst_) + (1 - smoothing_) * ewmmd_dst_;
 
+    // Equation 6a/b
     threshold_src_ = ewma_src_ + sensitivity_ * ewmmd_src_;
     threshold_dst_ = ewma_dst_ - sensitivity_ * ewmmd_dst_;
   }
