@@ -115,11 +115,11 @@ public:
 
         src_cs_.reset_entropy_norm();
         dst_cs_.reset_entropy_norm();
-      }
 
-      // B. Impl
-      // B.1 - Transition state
-      transition_state(under_attack);
+        // B. Impl
+        // B.1 - Transition state
+        transition_state(under_attack);
+      }
 
       // B.2 - Check freq. variation if state is not safe
       if (system_status_ != Status::SAFE) {

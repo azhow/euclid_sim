@@ -113,7 +113,8 @@ public:
       auto& running_cs { count_sketches_[CountSketchSelection::RUNNING] };
       if (running_cs(i, col).wid != curr_wid) {
         auto& last_cs { count_sketches_[CountSketchSelection::LAST] };
-        if (curr_wid > 0 && curr_system_status == Status::SAFE) {
+
+        if (curr_wid > 1 && curr_system_status == Status::SAFE) {
           // Copy from the last running window
           auto& safe_cs { count_sketches_[CountSketchSelection::SAFE] };
           safe_cs(i, col).count = last_cs(i, col).count;
